@@ -1,0 +1,114 @@
+@Test
+public void testGetAllBooks() throws Exception {
+    List<Book> mockBooks = Arrays.asList(
+        new Book(1L, "Book 1", "Author 1"),
+        new Book(2L, "Book 2", "Author 2"),
+        new Book(3L, "Book 3", "Author 3")
+    );
+    
+    Mockito.when(bookService.getAllBooks()).thenReturn(mockBooks);
+    
+    mockMvc.perform(MockMvcRequestBuilders.get("/books"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$", hasSize(3)))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(1))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].title").value("Book 1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].author").value("Author 1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[1].id").value(2))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[1].title").value("Book 2"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[1].author").value("Author 2"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[2].id").value(3))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[2].title").value("Book 3"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[2].author").value("Author 3"));
+}
+
+@Test
+public void testSortAllBooksById() throws Exception {
+    List<Book> mockBooks = Arrays.asList(
+        new Book(3L, "Book 3", "Author 3"),
+        new Book(1L, "Book 1", "Author 1"),
+        new Book(2L, "Book 2", "Author 2")
+    );
+    
+    Mockito.when(bookService.sortAllBooksById()).thenReturn(mockBooks);
+    
+    mockMvc.perform(MockMvcRequestBuilders.get("/books/sortById"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$", hasSize(3)))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(3))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].title").value("Book 3"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[0].author").value("Author 3"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[1].id").value(1))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[1].title").value("Book 1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[1].author").value("Author 1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[2].id").value(2))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[2].title").value("Book 2"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$[2].author").value("Author 2"));
+}
+
+@Test
+public void testGetBookById() throws Exception {
+    Book mockBook = new Book(1L, "Book 1", "Author 1");
+    
+    Mockito.when(bookService.getBookById(1L)).thenReturn(mockBook);
+    
+    mockMvc.perform(MockMvcRequestBuilders.get("/books/{id}", 1))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(1))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Book 1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.author").value("Author 1"));
+}
+
+@Test
+public void testUpdateBookById() throws Exception {
+    Book updatedBook = new Book(1L, "Updated Book", "Updated Author");
+    String updatedBookJson = "{\"id\": 1, \"title\": \"Updated Book\", \"author\": \"Updated Author\"}";
+
+    Mockito.when(bookService.updateBookById(1L, updatedBook)).thenReturn(updatedBook);
+
+    mockMvc.perform(MockMvcRequestBuilders.put("/books/{id}", 1)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(updatedBookJson))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(1))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Updated Book"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.author").value("Updated Author"));
+}
+
+
+@Test
+public void testDeleteBookById() throws Exception {
+    mockMvc.perform(MockMvcRequestBuilders.delete("/books/{id}", 1))
+            .andExpect(MockMvcResultMatchers.status().isOk());
+    
+    Mockito.verify(bookService, Mockito.times(1)).deleteBookById(1L);
+}
+
+
+@Test
+public void testCreateBook() throws Exception {
+    Book newBook = new Book("New Book", "New Author");
+    String newBookJson = "{\"title\": \"New Book\", \"author\": \"New Author\"}";
+
+    Mockito.when(bookService.createBook(Mockito.any(Book.class))).thenReturn(newBook);
+
+    mockMvc.perform(MockMvcRequestBuilders.post("/books")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(newBookJson))
+            .andExpect(MockMvcResultMatchers.status().isCreated())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("New Book"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.author").value("New Author"));
+}
+
+
+@Test
+public void testCreateBook_InvalidRequest() throws Exception {
+    String invalidBookJson = "{\"author\": \"Invalid Author\"}";
+
+    mockMvc.perform(MockMvcRequestBuilders.post("/books")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(invalidBookJson))
+            .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    
+    Mockito.verifyNoInteractions(bookService);
+}
